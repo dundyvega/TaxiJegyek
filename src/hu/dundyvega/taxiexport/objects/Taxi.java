@@ -10,12 +10,11 @@ import java.util.ArrayList;
 public class Taxi {
 	
 	private ArrayList<Staff> walkers;
-	private Staff origo;
+	final private Staff origo = new Staff(-1, "UPC János", "str. Brancusi 147", 46.760893, 23.613569, "nem");
 	
 	public Taxi() {
 		
 		walkers = new ArrayList<Staff>();
-		origo = new Staff(-1, "UPC János", "str. Brancusi 147", 46.760893, 23.613569);
 	}
 	
 	/**

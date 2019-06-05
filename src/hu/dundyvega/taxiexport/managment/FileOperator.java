@@ -8,8 +8,11 @@
 package hu.dundyvega.taxiexport.managment;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -29,12 +32,24 @@ import org.xml.sax.SAXException;
 import hu.dundyvega.taxiexport.objects.Staff;
 import hu.dundyvega.taxiexport.objects.Taxi;
 
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.sl.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 final public class FileOperator {
 
 	/**
 	 * Ez a fájl az a fájl, ahonnan betöltődnek az adatok a címekről
 	 */
 	final static String xmlLoc = "transportation.staff";
+	final static String  taxi = "taxi.xlsx";
+	final static String export = "export.xlsx";
 	
 	
 	
@@ -47,7 +62,7 @@ final public class FileOperator {
 	 * @throws IOException 
 	 * @throws SAXException 
 	 */
-	public static void newItem(String name, String adress, double lat, double lon) {
+	public static void newItem(String name, String adress, double lat, double lon, String info) {
 		
 		File file = new File(xmlLoc);
 		
@@ -78,6 +93,7 @@ final public class FileOperator {
 			staff.setAttribute("adress", adress); 
 			staff.setAttribute("lat", lat + "");
 			staff.setAttribute("lon", lon + "");
+			staff.setAttribute("taxi", info);
 			
 			rootElement.appendChild(staff);
 			
@@ -177,7 +193,7 @@ final public class FileOperator {
 	 */
 	
 	
-	public static void modifyStaffInformationsOnXML(int id, String adress, double lat, double lon) {
+	public static void modifyStaffInformationsOnXML(int id, String name, String adress, double lat, double lon, String taxi) {
 		
 		try {
 			File file = new File(xmlLoc);
@@ -201,10 +217,11 @@ final public class FileOperator {
 				
 				if (staff.hasAttribute("id") && staff.getAttribute("id").equals("" + id)) {
 					// megtaláltuk, módosítjuk
-					
+					staff.setAttribute("name", name); 
 					staff.setAttribute("adress", adress); 
 					staff.setAttribute("lat", lat + "");
 					staff.setAttribute("lon", lon + "");
+					staff.setAttribute("taxi", taxi);
 					
 					break;
 					
@@ -239,6 +256,11 @@ final public class FileOperator {
 	 * Az XML fájl létrehozása, amiben tárolva vannak az adatok
 	 * 
 	 */
+	
+	
+	
+	
+	
 	public static void createXML() {
 		
 		
@@ -258,67 +280,9 @@ final public class FileOperator {
 			staff.setAttribute("adress", "str. Tasnad 29/22"); 
 			staff.setAttribute("lat", "46.759600");
 			staff.setAttribute("lon", "23.546287");
+			staff.setAttribute("taxi", "igen");
 			rootElement.appendChild(staff);
-			
-			staff = doc.createElement("Staff");
-			
-			staff.setAttribute("id", "1");
-			staff.setAttribute("name", "Horváth Hunor");
-			staff.setAttribute("adress", "str. Tasnad 29/22"); 
-			staff.setAttribute("lat", "46.759600");
-			staff.setAttribute("lon", "23.546287");
-			
-			rootElement.appendChild(staff);
-			
-			
-			
-			staff = doc.createElement("Staff");
-			
-			staff.setAttribute("id", "1");
-			staff.setAttribute("name", "p. Tica");
-			staff.setAttribute("adress", "str. Tasnad 29/22"); 
-			staff.setAttribute("lat", "46.759600");
-			staff.setAttribute("lon", "23.546287");
-			
-			rootElement.appendChild(staff);
-	
-			
-			staff = doc.createElement("Staff");
-			staff.setAttribute("id", "2");
-			staff.setAttribute("name", "Kis Pista");
-			staff.setAttribute("adress", "str. Brates 10"); 
-			staff.setAttribute("lat", "46.759534");
-			staff.setAttribute("lon", "23.545468");
-			
-			rootElement.appendChild(staff);
-			
-			staff = doc.createElement("Staff");
-			staff.setAttribute("id", "3");
-			staff.setAttribute("name", "Nagy Pista");
-			staff.setAttribute("adress", "str. Donath"); 
-			staff.setAttribute("lat", "46.765035");
-			staff.setAttribute("lon", "23.528973");
-			
-			rootElement.appendChild(staff);
-			
-			
-			staff = doc.createElement("Staff");
-			staff.setAttribute("id", "4");
-			staff.setAttribute("name", "Sánta Jutka");
-			staff.setAttribute("adress", "str. Titu Maiorescu 8"); 
-			staff.setAttribute("lat", "46.758686");
-			staff.setAttribute("lon", "23.606271");
-			
-			rootElement.appendChild(staff);
-			
-			staff = doc.createElement("Staff");
-			staff.setAttribute("id", "5");
-			staff.setAttribute("name", "Csöves János");
-			staff.setAttribute("adress", "Piata Gari 3"); 
-			staff.setAttribute("lat", "46.784066");
-			staff.setAttribute("lon", "23.585422");
-			
-			rootElement.appendChild(staff);
+
 			
 			
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -371,7 +335,7 @@ final public class FileOperator {
 			
 				Element el = (Element)nlist.item(i);
 				Staff staff = new Staff(Integer.parseInt(el.getAttribute("id")), el.getAttribute("name"), el.getAttribute("adress"),
-						Double.parseDouble(el.getAttribute("lat")), Double.parseDouble(el.getAttribute("lon"))); 
+						Double.parseDouble(el.getAttribute("lat")), Double.parseDouble(el.getAttribute("lon")), el.getAttribute("taxi")); 
 				
 				walkers.add(staff);
 			}
@@ -385,9 +349,119 @@ final public class FileOperator {
 	}
 
 
-
-
-
+	/**
+	 * Az eredeti xlsx táblázat átalakítása xml-be
+	 * @throws IOException 
+	 * 
+	 */
+	
+	public static void xlsxToXml() throws IOException {
+		
+		
+		FileInputStream excelFile = new FileInputStream(taxi);
+		XSSFWorkbook workbook = new XSSFWorkbook(excelFile);
+		XSSFSheet datatypeSheet = workbook.getSheetAt(0);
+		
+		Iterator<Row> iterator = datatypeSheet.iterator();
+		Row currentRow = iterator.next();
+		
+		while (iterator.hasNext()) {
+			 currentRow = iterator.next();
+			Iterator<Cell> cellIterator = currentRow.iterator();
+			
+			while (cellIterator.hasNext()) {
+				//Cell currentCell = cellIterator.next();
+                //getCellTypeEnum shown as deprecated for version 3.15
+                //getCellTypeEnum ill be renamed to getCellType starting from version 4.0
+				
+				//System.out.println("kacsa");
+				Cell nameC = cellIterator.next();
+				String name = nameC.getStringCellValue();
+				
+				Cell adressC = cellIterator.next();
+				String adress = adressC.getStringCellValue();
+				
+				cellIterator.next();
+				cellIterator.next();
+				
+				Cell taxiC = cellIterator.next();
+				String taxi = taxiC.getStringCellValue();
+				
+				Cell latC = cellIterator.next();
+				String lat = latC.getStringCellValue();
+				double latD = Double.parseDouble(lat);
+				
+				Cell lonC = cellIterator.next();
+				String lon = lonC.getStringCellValue();
+				double lonD = Double.parseDouble(lon);
+				
+				//System.out.println("lan: " + lat + " lon" + lon);
+				
+				//FileOperator.newItem(, adress, lat, lon, info);
+				
+				FileOperator.newItem(name, adress, latD, lonD, taxi);
+			} 
+		}
+	}
 	
 	
+	/**
+	 * 
+	 * @return
+	 * @throws IOException 
+	 */
+
+	public static ArrayList<String> walkersFromExportFile() throws IOException {
+		
+		FileInputStream excelFile = new FileInputStream(export);
+		XSSFWorkbook workbook = new XSSFWorkbook(excelFile);
+		XSSFSheet datatypeSheet = workbook.getSheetAt(0);
+		
+		Iterator<Row> iterator = datatypeSheet.iterator();
+		Row currentRow = iterator.next();
+		
+		
+		ArrayList<String> walkers = new ArrayList<String>();
+		
+		while (iterator.hasNext()) {
+			 currentRow = iterator.next();
+			Iterator<Cell> cellIterator = currentRow.iterator();
+			
+			while (cellIterator.hasNext()) {
+				//Cell currentCell = cellIterator.next();
+                //getCellTypeEnum shown as deprecated for version 3.15
+                //getCellTypeEnum ill be renamed to getCellType starting from version 4.0
+				
+				//System.out.println("kacsa");
+				cellIterator.next();
+				
+				Cell nameC = cellIterator.next();
+				String name = nameC.getStringCellValue();
+				
+				cellIterator.next();
+				cellIterator.next();
+				cellIterator.next();
+				cellIterator.next();
+				
+				Cell datumC = cellIterator.next();
+				String datum = datumC.getDateCellValue().getHours() + ":" + datumC.getDateCellValue().getMinutes();
+				
+				if (datum.equals("22:0") ||  datum.equals("21:30")) {
+				
+					walkers.add(name + "*" + datum);
+					
+					System.out.println(name + "*" + datum);
+				
+				}
+				
+				break;
+				
+			}
+		}
+		
+		
+		
+		return walkers;
+		
+	}
 }

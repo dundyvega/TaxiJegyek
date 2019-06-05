@@ -4,7 +4,7 @@ package hu.dundyvega.taxiexport.objects;
 /**
  * 
  * @author dundyvega
- * Egy osztály, amiben tároljni tudjuk a kollégák adatait: név, cím, lat, lon
+ * Egy osztály, amiben tároljni tudjuk a kollégák adatait: név, cím, lat, lon, kel-nem kell taxi
  */
 public class Staff  {
 
@@ -13,6 +13,7 @@ public class Staff  {
 	private String adress;
 	private double lat;
 	private double lon;
+	private String taxi;
 
 	
 	
@@ -46,14 +47,16 @@ public class Staff  {
 	 * @param adress
 	 * @param lat
 	 * @param lon
+	 * @param taxi
 	 */
-	public Staff(int id, String name, String adress, double lat, double lon) {
+	public Staff(int id, String name, String adress, double lat, double lon, String taxi) {
 		
 		setId(id);
 		setName(name);
 		setAdress(adress);
 		setLat(lat);
 		setLon(lon);
+		setTaxi(taxi);
 	}
 	
 	/**
@@ -151,6 +154,14 @@ public class Staff  {
 	
 	public String toString() {
 		return getName() + "(" + getAdress() + ")";
+	}
+
+	public String getTaxi() {
+		return taxi;
+	}
+
+	public void setTaxi(String taxi) {
+		this.taxi = taxi;
 	}
 
 
