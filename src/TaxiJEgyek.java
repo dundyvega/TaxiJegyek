@@ -1,20 +1,75 @@
-import java.util.*;
+import java.awt.BorderLayout;
+import java.util.ArrayList;
 
+import javax.swing.DefaultListModel;
+import javax.swing.JFrame;
+import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 
 import hu.dundyvega.taxiexport.managment.FileOperator;
 import hu.dundyvega.taxiexport.objects.Graf;
 import hu.dundyvega.taxiexport.objects.Staff;
 import hu.dundyvega.taxiexport.objects.Taxi;
-import jdk.incubator.http.*;
-
-import java.lang.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.io.*;
 
 
-class DistanceCalculator
+class DistanceCalculator extends JFrame
 {
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private JMenuBar mb;
+	private JList<Staff> jl;
+	private JMenu fajl;
+	private JMenuItem kollegak;
+	private JMenuItem export;
+	
+	
+	DistanceCalculator(ArrayList<Staff> ar) {
+		
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.setTitle("Series");
+		
+		JPanel jp = new JPanel();
+		jp.setLayout(new BorderLayout());
+		
+		DefaultListModel<Staff> model = new DefaultListModel<>();
+		jl = new JList<Staff>(model);
+		
+		for (int i = 0; i < ar.size(); ++i) {
+			model.addElement(ar.get(i));
+		}
+		
+		jp.add(new JScrollPane(jl));
+		this.setContentPane(jp);
+		
+		mb = new JMenuBar();
+		
+		kollegak = new JMenuItem("Kollégák");
+		export = new JMenuItem ("Export");
+		
+		fajl = new JMenu("Fájl");
+		fajl.add(kollegak);
+		fajl.add(export);
+		
+		mb.add(fajl);
+		
+		
+		
+		this.setJMenuBar(mb);
+		this.setBounds(30, 40, 600, 600);
+		this.setVisible(true);
+		
+		
+		
+	}
+	
+	
 	public static void main (String[] args) throws java.lang.Exception
 	{
 		//System.out.println(distance(32.9697, -96.80322, 29.46786, -98.53506, "M") + " Miles\n");
@@ -41,8 +96,12 @@ class DistanceCalculator
 		
 		//rendezes();
 		
-		FileOperator.walkersFromExportFile();
+		//FileOperator.walkersFromExportFile();
 		
+		
+		//ArrayList<Staff> ar = FileOperator.WalkersFromExcel();
+		ArrayList<Staff> ar = new ArrayList<Staff>();
+		new DistanceCalculator(ar);
 		
 		//FileOperator.xlsxToXml();
 		

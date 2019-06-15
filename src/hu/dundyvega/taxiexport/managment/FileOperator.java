@@ -350,13 +350,15 @@ final public class FileOperator {
 
 
 	/**
-	 * Az eredeti xlsx táblázat átalakítása xml-be
+	 * Egy excelből begyűjti a kollégákat
 	 * @throws IOException 
 	 * 
 	 */
 	
-	public static void xlsxToXml() throws IOException {
+	public static ArrayList<Staff> WalkersFromExcel() throws IOException {
 		
+		
+		ArrayList<Staff> walkers = new ArrayList<Staff>();
 		
 		FileInputStream excelFile = new FileInputStream(taxi);
 		XSSFWorkbook workbook = new XSSFWorkbook(excelFile);
@@ -399,9 +401,16 @@ final public class FileOperator {
 				
 				//FileOperator.newItem(, adress, lat, lon, info);
 				
-				FileOperator.newItem(name, adress, latD, lonD, taxi);
+				//FileOperator.newItem(name, adress, latD, lonD, taxi);
+				
+				Staff st = new Staff(0, name, adress, latD, lonD, taxi);
+				
+				walkers.add(st);
 			} 
 		}
+		
+		
+		return walkers;
 	}
 	
 	
