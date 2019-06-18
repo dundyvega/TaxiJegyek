@@ -1,5 +1,13 @@
 import java.awt.BorderLayout;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Map;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JFrame;
@@ -9,6 +17,9 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import hu.dundyvega.taxiexport.managment.FileOperator;
 import hu.dundyvega.taxiexport.objects.Graf;
@@ -27,6 +38,8 @@ class DistanceCalculator extends JFrame
 	private JList<Staff> jl;
 	private JMenu fajl;
 	private JMenuItem kollegak;
+	String response;
+	String parsedDistance;
 	private JMenuItem export;
 	
 	
@@ -218,6 +231,67 @@ class DistanceCalculator extends JFrame
 		//System.out.println(taxik.get(29).getTaxi().get(2).getTaxi());
 		
 	}
+	
+	
+	
+	
+	public String getDistance(final double lat1, final double lon1, final double lat2, final double lon2){
+
+
+        Thread thread=new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+
+                    URL url = new URL("http://maps.googleapis.com/maps/api/directions/json?origin=" + lat1 + "," + lon1 + "&destination=" + lat2 + "," + lon2 + "&sensor=false&units=metric&mode=driving");
+                    final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("POST");
+                    InputStream in = new BufferedInputStream(conn.getInputStream());
+                     response = iStreamToString(in);
+
+                    JSONObject jsonObject = new JSONObject(response);
+                    JSONArray array = jsonObject.getJSONArray("routes");
+                    JSONObject routes = array.getJSONObject(0);
+                    JSONArray legs = routes.getJSONArray("legs");
+                    JSONObject steps = legs.getJSONObject(0);
+                    JSONObject distance = steps.getJSONObject("distance");
+                     parsedDistance=distance.getString("text");
+
+                    Log.v("Distsnce","Distance>>"+parsedDistance);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return parsedDistance;
+    }
+
+
+  public String iStreamToString(InputStream is1)
+    {
+        BufferedReader rd = new BufferedReader(new InputStreamReader(is1), 4096);
+        String line;
+        StringBuilder sb =  new StringBuilder();
+        try {
+            while ((line = rd.readLine()) != null) {
+                sb.append(line);
+            }
+            rd.close();
+
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        String contentOfMyInputStream = sb.toString();
+        return contentOfMyInputStream;
+    }
 	
 
 	
