@@ -47,12 +47,12 @@ public class Taxi {
 	 * Mennyit tenne meg a taxi a benne ülő személyekkel, ha repülhetne
 	 * @return
 	 */
-	public double fullLengthOfTheRoad() {
+	public double fullLengthOfTheRoad(int szamitas) {
 		
-		double dist = origo.getDifrance(walkers.get(0));
+		double dist = origo.getDifrance(walkers.get(0), szamitas);
 		
 		for (int i = 1; i < walkers.size(); ++i) {
-			dist += walkers.get(i-1).getDifrance(walkers.get(i));
+			dist += walkers.get(i-1).getDifrance(walkers.get(i), szamitas);
 		}
 		
 		return dist;
@@ -64,18 +64,18 @@ public class Taxi {
 	 * @param k
 	 * @return
 	 */
-	public double fullLengthOfTheRoadMinusK(int k) {
+	public double fullLengthOfTheRoadMinusK(int k, int szamitas) {
 		
 		double dist = origo.getDifrance(walkers.get(0));
 		
 		for (int i = 1; i < walkers.size(); ++i) {
 			
 			if (i != k && k != i - 1) {
-				dist += walkers.get(i-1).getDifrance(walkers.get(i));
+				dist += walkers.get(i-1).getDifrance(walkers.get(i), szamitas);
 			} else {
 				//az origot nem kell beszámolnunk, mivel 0-tól kezdjük a számolást
 				if (k == i - 1) {
-					dist += walkers.get(i-2).getDifrance(walkers.get(i));
+					dist += walkers.get(i-2).getDifrance(walkers.get(i), szamitas);
 				}
 			}
 		}
@@ -89,9 +89,9 @@ public class Taxi {
 	 * @param f
 	 * @return
 	 */
-	public double fullLengthIfPlus(Staff f) {
+	public double fullLengthIfPlus(Staff f, int szamitas) {
 		
-		return fullLengthOfTheRoad() + walkers.get(walkers.size() - 1).getDifrance(f);
+		return fullLengthOfTheRoad(szamitas) + walkers.get(walkers.size() - 1).getDifrance(f, szamitas);
 	}
 	
 	
@@ -105,16 +105,16 @@ public class Taxi {
 		return walkers.size() < 4;
 	}
 	
-	public double fullRoadElementSwapp(int i, Staff f) {
+	public double fullRoadElementSwapp(int i, Staff f, int szamitas) {
 		
 		if (i >= walkers.size()) {
-			System.out.println("nagyobb");
+
 			return 10000000;
 			
 		} else {
 			Staff csere = walkers.get(i);
 			walkers.set(i,f);
-			double road = this.fullLengthOfTheRoad();
+			double road = this.fullLengthOfTheRoad(szamitas);
 			
 			walkers.set(i, csere);
 			return road;

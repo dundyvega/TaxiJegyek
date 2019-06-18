@@ -1,6 +1,15 @@
 
 package hu.dundyvega.taxiexport.objects;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 /**
  * 
  * @author dundyvega
@@ -127,6 +136,128 @@ public class Staff  implements Comparable<Staff> {
 	 * @param staff
 	 * @return
 	 */
+	
+	/**
+	 * Egy térképet használva kiszámolja az utat
+	 * @param staff
+	 * @return
+	 */
+	public double getDifranceApi(Staff staff) {
+		
+		
+		if ((getLat() == staff.getLat()) && (getLon() == staff.getLon())) {
+			return 0;
+		} else {
+			return getDistance(this.getLat(), this.getLon(), staff.getLat(), staff.getLon());
+			
+		}
+		
+	}
+	
+	
+	
+	private double  getDistance(final double lat1, final double lon1, final double lat2, final double lon2){
+
+		double distance = 0;
+		try {
+           String s = "http://router.project-osrm.org/route/v1/driving/" + lon1 + "," + lat1 + ";" + lon2 + "," + lat2 + "?overview=false";
+    
+           String result = doHttpUrlConnectionAction(s);
+           
+           //System.out.println(result);
+         
+           JSONObject jSONObject = new JSONObject(result);
+           JSONArray array = jSONObject.getJSONArray("routes");
+           JSONObject routes = array.getJSONObject(0);
+           JSONArray legs = routes.getJSONArray("legs");
+           JSONObject steps = legs.getJSONObject(0);
+           
+  
+           
+           distance = steps.getDouble("distance");
+           
+           
+		} catch (Exception ex) {System.out.println(ex);}
+		
+		return distance/1000;
+		
+            
+
+	}
+	
+	
+	
+	 private  String doHttpUrlConnectionAction(String desiredUrl)
+			  throws Exception
+			  {
+			    URL url = null;
+			    BufferedReader reader = null;
+			    StringBuilder stringBuilder;
+
+			    try
+			    {
+			      // create the HttpURLConnection
+			      url = new URL(desiredUrl);
+			      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+			      
+			      // just want to do an HTTP GET here
+			      connection.setRequestMethod("GET");
+			      
+			      // uncomment this if you want to write output to this url
+			      //connection.setDoOutput(true);
+			      
+			      // give it 15 seconds to respond
+			      connection.setReadTimeout(15*1000);
+			      connection.connect();
+
+			      // read the output from the server
+			      reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			      stringBuilder = new StringBuilder();
+
+			      String line = null;
+			      while ((line = reader.readLine()) != null)
+			      {
+			        stringBuilder.append(line + "\n");
+			      }
+			      return stringBuilder.toString();
+			    }
+			    catch (Exception e)
+			    {
+			      e.printStackTrace();
+			      throw e;
+			    }
+			    finally
+			    {
+			      // close the reader; this can throw an exception too, so
+			      // wrap it in another try/catch block.
+			      if (reader != null)
+			      {
+			        try
+			        {
+			          reader.close();
+			        }
+			        catch (IOException ioe)
+			        {
+			          ioe.printStackTrace();
+			        }
+			      }
+			    }
+			  }
+	 
+	 
+	 public double getDifrance(Staff staff, int szamitas) {
+		 
+		 if (szamitas == 1) { //gömbi
+			 
+			 return getDifrance(staff);
+			 
+		 } else { //api
+			 
+			 return getDifranceApi(staff);
+		 }
+	 }
+	
+	
 	public double getDifrance(Staff staff) {
 		
 		

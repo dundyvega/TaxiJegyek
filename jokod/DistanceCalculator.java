@@ -1,4 +1,5 @@
 import java.awt.BorderLayout;
+import java.awt.Cursor;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -12,6 +13,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -21,6 +23,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.ListModel;
 import javax.swing.UIManager;
@@ -32,6 +36,7 @@ import hu.dundyvega.taxiexport.managment.FileOperator;
 import hu.dundyvega.taxiexport.objects.Graf;
 import hu.dundyvega.taxiexport.objects.Staff;
 import hu.dundyvega.taxiexport.objects.Taxi;
+import javafx.scene.control.ProgressBar;
 /*
 import hu.dundyvega.taxiexport.managment.FileOperator;
 import hu.dundyvega.taxiexport.objects.Graf;
@@ -62,6 +67,24 @@ class DistanceCalculator extends JFrame
 	private JMenuItem export;
 	private JLabel statusBar;
 	
+	private JMenu beallitasok;
+	
+	
+	private JMenu optimalizalas;
+	ButtonGroup optimGroup;
+	JRadioButtonMenuItem gomb;
+	JRadioButtonMenuItem api;
+	
+	private JMenu hibaHatar;
+	ButtonGroup hibaHatarGroup;
+	JRadioButtonMenuItem nulla;
+	JRadioButtonMenuItem egy;
+	JRadioButtonMenuItem egyfel;
+	JRadioButtonMenuItem ketto;
+	JRadioButtonMenuItem harom;
+	
+	
+	private JProgressBar progressBar;
 	
 	DistanceCalculator(ArrayList<Staff> ar) {
 		
@@ -149,11 +172,83 @@ class DistanceCalculator extends JFrame
 		kollegak = new JMenuItem("Kollégák");
 		export = new JMenuItem ("Export");
 		
+		
+		
+		
+		
 		fajl = new JMenu("Fájl");
 		fajl.add(kollegak);
 		fajl.add(export);
 		
 		mb.add(fajl);
+		
+		
+		
+		beallitasok = new JMenu("Beállítások");
+		beallitasok.addSeparator();
+		
+		optimalizalas = new JMenu("Optimalizálás");
+		beallitasok.add(optimalizalas);
+		
+		gomb = new JRadioButtonMenuItem("gömbi koordináták");
+		api = new JRadioButtonMenuItem("open api koordináták");
+		
+		optimGroup = new ButtonGroup();
+		optimalizalas.add(gomb);
+		gomb.setSelected(true);
+		
+		
+		optimalizalas.add(api);
+		optimGroup.add(api);
+		
+		
+		beallitasok.addSeparator();
+		hibaHatar = new JMenu("Hibahatár");
+		beallitasok.add(hibaHatar);
+		
+		hibaHatarGroup = new ButtonGroup();
+		nulla = new JRadioButtonMenuItem("0 km");
+		egy = new JRadioButtonMenuItem("1 km");
+		egyfel = new JRadioButtonMenuItem("1,5 km");
+		ketto = new JRadioButtonMenuItem("2 km");
+		harom = new JRadioButtonMenuItem("3 km");
+		
+		hibaHatarGroup.add(nulla);
+		hibaHatarGroup.add(egy);
+		hibaHatarGroup.add(egyfel);
+		hibaHatarGroup.add(ketto);
+		hibaHatarGroup.add(harom);
+		
+		egyfel.setSelected(true);
+		
+		
+		hibaHatar.add(nulla);
+		hibaHatar.add(egy);
+		hibaHatar.add(egyfel);
+		hibaHatar.add(ketto);
+		hibaHatar.add(harom);
+		
+		mb.add(beallitasok);
+		
+		
+		
+		/*
+		 * private JMenu beallitasok;
+	
+	
+	private JMenu optimalizalas;
+	ButtonGroup optimGroup;
+	JRadioButtonMenuItem gomb;
+	JRadioButtonMenuItem api;
+	
+	private JMenu hibaHatar;
+	ButtonGroup hibaHatarGroup;
+	JRadioButtonMenuItem nulla;
+	JRadioButtonMenuItem egy;
+	JRadioButtonMenuItem egyfel;
+	JRadioButtonMenuItem ketto;
+	JRadioButtonMenuItem harom;*/
+		
 		
 		JPanel contentPanel = new JPanel();
 		contentPanel.setLayout(new BorderLayout());
@@ -164,6 +259,16 @@ class DistanceCalculator extends JFrame
 		JLabel west = new JLabel("  ");
 		JLabel est = new JLabel(" ");
 		contentPanel.add(statusBar, BorderLayout.SOUTH);
+		
+		
+		/*progressBar = new JProgressBar();
+	    progressBar.setValue(35);
+	    progressBar.setStringPainted(true);
+	    contentPanel.add(progressBar, BorderLayout.SOUTH);
+	    progressBar.setVisible(false);
+	    */
+		
+		
 		contentPanel.add(north, BorderLayout.NORTH);
 		contentPanel.add(est, BorderLayout.EAST);
 		contentPanel.add(west, BorderLayout.WEST);
@@ -347,12 +452,19 @@ class DistanceCalculator extends JFrame
 		jl22but.addActionListener(new ActionListener() {
 
 			@Override
-			public void actionPerformed(ActionEvent e) {
-				beulTaxikba(model22);
+			synchronized public void actionPerformed(ActionEvent e) {
+				
+					
+						beulTaxikba(model22);
+
 				
 			}
 			
 		});
+		
+		
+		
+		
 		
 		
 		this.setJMenuBar(mb);
@@ -361,15 +473,54 @@ class DistanceCalculator extends JFrame
 		
 	}
 	
-	public void beulTaxikba(DefaultListModel<Staff> model) {
+	public synchronized void beulTaxikba(DefaultListModel<Staff> model) {
 		
 		Staff origo = new Staff(-1, "UPC János", "str. Brancusi 147", 46.760893, 23.613569, "nem");
 		
-		ArrayList<Staff> staffs = new ArrayList<Staff>();
+		double hibahatar = 0;
 		
+		/*hibahatár beállítása a menu alapján*/
+		
+		if (nulla.isSelected()) {
+			
+			hibahatar = 0;
+			
+		} else if (egy.isSelected()) {
+			
+			hibahatar = 1;
+			
+		} else if (egyfel.isSelected()) {
+			
+			hibahatar = 1.5;
+			
+		} else if (ketto.isSelected()) {
+			hibahatar = 2;
+			
+		} else {
+			hibahatar = 3;
+		}
+		
+		
+		//számítás beállítása
+		
+		int szamitas = 0;
+		
+		if (gomb.isSelected()) {
+			
+			szamitas = 1;
+			
+		} else {
+			
+			szamitas = 0;
+		}
+		
+		ArrayList<Staff> staffs = new ArrayList<Staff>();
+		int progress = 0;
 
 		for (int i = 0; i < model.size(); ++i) {
 			staffs.add(model.get(i));
+			
+			
 		}
 		
 		
@@ -385,6 +536,8 @@ class DistanceCalculator extends JFrame
 
 		while (staffs.size() > 0) { 
 			
+			
+			
 			// a lista első emberét beleültetjük az üres taxiba, és kitörüljük azok közül, akik még nem találták meg ahelyüket
 			
 			Taxi taxi = new Taxi();
@@ -399,11 +552,14 @@ class DistanceCalculator extends JFrame
 				/*Ha beülne a taxiban rövidebb lenne az út mintha két taxi menne az origotól?
 				 * + van-e hely a taxiban még egy embernek?*/
 				
-				if (taxi.fullLengthIfPlus(staffs.get(i)) < taxi.fullLengthOfTheRoad() + 
-						origo.getDifrance(staffs.get(i)) && taxi.notFullWalkers()) {
+			
+				//System.out.println(staffs.get(i) + " beülzetése " + origo.getDifrance(staff));
+				
+				if (taxi.fullLengthIfPlus(staffs.get(i), szamitas) + hibahatar < taxi.fullLengthOfTheRoad(szamitas) + 
+						origo.getDifrance(staffs.get(i), szamitas) && taxi.notFullWalkers()) {
 					
 					taxi.addStaff(staffs.get(i));
-					
+					//System.out.println("kacsa" + staffs.get(i));
 					
 				} 
 				
@@ -435,10 +591,10 @@ class DistanceCalculator extends JFrame
 					for (int k = 1; k < taxik.get(i).getTaxi().size(); ++k) {
 						
 						//ellenőrizzük, hogy ha az i. taxi k. elemét áttennénk a j. taxi utolsó helyére, akkor jobb lenne a költség
-						if (taxik.get(i).fullLengthOfTheRoadMinusK(k) + 
-								taxik.get(j).fullLengthIfPlus(taxik.get(i).getTaxi().get(k)) < 
+						if (taxik.get(i).fullLengthOfTheRoadMinusK(k, szamitas) + 
+								taxik.get(j).fullLengthIfPlus(taxik.get(i).getTaxi().get(k), szamitas) < 
 								
-								taxik.get(i).fullLengthOfTheRoad() + taxik.get(j).fullLengthOfTheRoad()) {
+								taxik.get(i).fullLengthOfTheRoad(szamitas) + taxik.get(j).fullLengthOfTheRoad(szamitas)) {
 							
 							Staff elem = taxik.get(i).getTaxi().get(k);
 							taxik.get(i).getTaxi().remove(k);
@@ -470,7 +626,7 @@ class DistanceCalculator extends JFrame
 		taxik.get(2).getTaxi().set(0, csere);
 		*/
 		for (int i = 0; i < taxik.size(); ++i) {
-			System.out.println(i+ ". taxi: " + taxik.get(i).fullLengthOfTheRoad());
+			System.out.println(i+ ". taxi: " + taxik.get(i).fullLengthOfTheRoad(szamitas));
 			
 			for (int j = 0; j < taxik.get(i).getTaxi().size(); ++j) {
 				System.out.println(taxik.get(i).getTaxi().get(j));
@@ -601,6 +757,10 @@ class DistanceCalculator extends JFrame
 		
 		DistanceCalculator cl = new DistanceCalculator(ar);
 		//getDistance(46.759409,23.5441039, 46.7607093,23.6113426);
+		
+		
+		
+		
 		
 	}
 }
