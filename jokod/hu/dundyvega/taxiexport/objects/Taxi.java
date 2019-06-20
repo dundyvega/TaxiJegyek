@@ -11,6 +11,7 @@ public class Taxi {
 	
 	private ArrayList<Staff> walkers;
 	final private Staff origo = new Staff(-1, "UPC János", "str. Brancusi 147", 46.760893, 23.613569, "nem");
+	private int optimalis;
 	
 	public Taxi() {
 		
@@ -92,6 +93,77 @@ public class Taxi {
 	public double fullLengthIfPlus(Staff f, int szamitas) {
 		
 		return fullLengthOfTheRoad(szamitas) + walkers.get(walkers.size() - 1).getDifrance(f, szamitas);
+	}
+	
+	/**
+	 * Visszatéríti, hogy mennyi volna a távolság, ha beraknánk egy f elemet az optimális pozicióba
+	 * @param f
+	 * @param szamiatas
+	 * @return
+	 */
+	public double fullLengthPlusOptimalization(Staff f, int szamiatas) {
+		
+		
+		double osszeg = 10000000;
+		optimalis = 0;
+		double szamol = 0;
+		Staff elem;
+	
+		for (int i = 0; i < walkers.size(); ++i) {
+			
+			elem = walkers.get(i);
+			walkers.set(i, f);
+			
+			//ha találtunk egy kisebbet
+			
+			
+			szamol = fullLengthOfTheRoad(szamiatas);
+			if (szamol < osszeg) {
+				
+				osszeg = szamol;
+				
+				optimalis = i;
+			}
+			
+			walkers.set(i, elem);
+			
+			
+		}
+		
+		return osszeg;
+		
+	}
+	
+	
+	
+	/**
+	 * berakja az elemet egy optimális helyre
+	 * @param staff
+	 */
+	public void addStaffOptimalization(Staff staff) {
+		
+		walkers.add(staff);
+		
+		ArrayList<Staff> staffs = new ArrayList<Staff>();
+		
+		for (int i = 0; i < walkers.size(); ++i) {
+			
+			if (i < optimalis) {
+				
+				staffs.add(walkers.get(i));
+				
+			} else  if (i == optimalis) {
+				
+				staffs.add(staff);
+				
+			} else {
+				
+				staffs.add(walkers.get(i - 1));
+			}
+			
+		}
+		
+		walkers = staffs;
 	}
 	
 	

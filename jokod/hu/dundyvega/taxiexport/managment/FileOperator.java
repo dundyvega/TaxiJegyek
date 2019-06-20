@@ -48,8 +48,8 @@ final public class FileOperator {
 	 * Ez a fájl az a fájl, ahonnan betöltődnek az adatok a címekről
 	 */
 	final static String xmlLoc = "transportation.staff";
-	final static String  taxi = "taxi.xlsx";
-	final static String export = "export.xlsx";
+	 static private String  taxi;
+	 static private String export;
 	
 	
 	
@@ -420,7 +420,7 @@ final public class FileOperator {
 	 * @throws IOException 
 	 */
 
-	public static ArrayList<String> walkersFromExportFile() throws IOException {
+	public static ArrayList<String> walkersFromExportFile() throws IOException, NullPointerException {
 		
 		FileInputStream excelFile = new FileInputStream(export);
 		XSSFWorkbook workbook = new XSSFWorkbook(excelFile);
@@ -453,7 +453,11 @@ final public class FileOperator {
 				cellIterator.next();
 				
 				Cell datumC = cellIterator.next();
-				String datum = datumC.getDateCellValue().getHours() + ":" + datumC.getDateCellValue().getMinutes();
+				String datum;
+				 
+				if (datumC.getCellType() == datumC.getCellTypeEnum().NUMERIC) {
+				
+				datum = datumC.getDateCellValue().getHours() + ":" + datumC.getDateCellValue().getMinutes();
 				
 				if (datum.equals("22:0") ||  datum.equals("21:30")) {
 				
@@ -461,6 +465,12 @@ final public class FileOperator {
 					
 					//System.out.println(name + "*" + datum);
 				
+				}
+				
+				} else {
+					
+					throw new NullPointerException("Rossz beviteli fálj vagy rossz adatok");
+					
 				}
 				
 				break;
@@ -471,6 +481,29 @@ final public class FileOperator {
 		
 		
 		return walkers;
+		
+	}
+
+
+
+	/**
+	 * Beállítja az névsor helyét
+	 * @param absolutePath
+	 */
+	public static void setTaxi(String absolutePath) {
+		// TODO Auto-generated method stub
+		taxi = absolutePath;
+		
+	}
+
+
+
+/**
+ * Beéllítja az export fálj helyét
+ * @param absolutePath
+ */
+	public static void setExport(String absolutePath) {
+		export = absolutePath;
 		
 	}
 }

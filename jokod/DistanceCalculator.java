@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -12,22 +13,27 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.ListModel;
 import javax.swing.UIManager;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
 
@@ -43,6 +49,7 @@ import hu.dundyvega.taxiexport.objects.Graf;
 import hu.dundyvega.taxiexport.objects.Staff;
 import hu.dundyvega.taxiexport.objects.Taxi;
 */
+import javafx.scene.text.Font;
 
 class DistanceCalculator extends JFrame
 {
@@ -52,6 +59,7 @@ class DistanceCalculator extends JFrame
 	 */
 	private static final long serialVersionUID = 1L;
 	private JMenuBar mb;
+	private DistanceCalculator tihs;
 	private JList<Staff> jl21;
 	private JList<Staff> jl22;
 	private JList<Staff> jlNemKell;
@@ -67,7 +75,11 @@ class DistanceCalculator extends JFrame
 	private JMenuItem export;
 	private JLabel statusBar;
 	
+	private Thread progressBarThread; 
+	
 	private JMenu beallitasok;
+	
+	private boolean vege;
 	
 	
 	private JMenu optimalizalas;
@@ -83,10 +95,10 @@ class DistanceCalculator extends JFrame
 	JRadioButtonMenuItem ketto;
 	JRadioButtonMenuItem harom;
 	
-	
+	private ArrayList<Staff> ar;
 	private JProgressBar progressBar;
 	
-	DistanceCalculator(ArrayList<Staff> ar) {
+	DistanceCalculator() {
 		
 		//Cím beállítás
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -171,13 +183,76 @@ class DistanceCalculator extends JFrame
 		
 		kollegak = new JMenuItem("Kollégák");
 		export = new JMenuItem ("Export");
+		export.setEnabled(false);
 		
-		
+		tihs = this;
 		
 		
 		
 		fajl = new JMenu("Fájl");
 		fajl.add(kollegak);
+		
+		/**
+		 * A kollégákat betöltő listener, az export kicsit távolabb lesz
+		 */
+		kollegak.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				
+				 JFileChooser fileChooser = new JFileChooser();
+				 
+				 
+				 String path = "user.home";
+				 
+				  try {
+					path = new File(".").getCanonicalPath() + "/";
+					
+					System.out.println(path);
+					
+					
+				} catch (IOException e2) {
+					// TODO Auto-generated catch block
+					e2.printStackTrace();
+				}
+			        fileChooser.setCurrentDirectory(new File(path));
+	
+			        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			        fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Kollégák névsora", "xlsx"));
+			        fileChooser.setAcceptAllFileFilterUsed(true);
+			        int result = fileChooser.showOpenDialog(tihs);
+			        if (result == JFileChooser.APPROVE_OPTION) {
+			            File selectedFile = fileChooser.getSelectedFile();
+			            System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+			            
+			            FileOperator.setTaxi(selectedFile.getAbsolutePath());
+			            try {
+			            ar = FileOperator.WalkersFromExcel();
+			            
+			            export.setEnabled(true);
+			            
+			            } catch (Exception ex) {
+			            	
+			            	JOptionPane.showMessageDialog(tihs, "Hibás fájl!");
+			            	export.setEnabled(false);
+			            	
+			        		jl21but.setEnabled(false);
+			        		jl22but.setEnabled(false);
+			        		jlNemKellbut.setEnabled(false);
+			        		jlNemTudombut.setEnabled(false);
+			        		jl21NemKell.setEnabled(false);
+			        		jl22NemKell.setEnabled(false);
+			            	
+			            	
+			            }
+			            
+			        }
+				
+			}
+			
+		});
+		
 		fajl.add(export);
 		
 		mb.add(fajl);
@@ -194,6 +269,7 @@ class DistanceCalculator extends JFrame
 		api = new JRadioButtonMenuItem("open api koordináták");
 		
 		optimGroup = new ButtonGroup();
+		optimGroup.add(gomb);
 		optimalizalas.add(gomb);
 		gomb.setSelected(true);
 		
@@ -258,15 +334,15 @@ class DistanceCalculator extends JFrame
 		JLabel north = new JLabel("  ");
 		JLabel west = new JLabel("  ");
 		JLabel est = new JLabel(" ");
-		contentPanel.add(statusBar, BorderLayout.SOUTH);
+		//contentPanel.add(statusBar, BorderLayout.SOUTH);
 		
 		
-		/*progressBar = new JProgressBar();
+		progressBar = new JProgressBar();
 	    progressBar.setValue(35);
 	    progressBar.setStringPainted(true);
 	    contentPanel.add(progressBar, BorderLayout.SOUTH);
 	    progressBar.setVisible(false);
-	    */
+	    
 		
 		
 		contentPanel.add(north, BorderLayout.NORTH);
@@ -279,53 +355,10 @@ class DistanceCalculator extends JFrame
 		/*-
 		 * Ez csak a menü megnyítása után fog bejönni csak érdekel, hogy hogyan működik
 		 */
-		
-		try {
-			ArrayList<String> walkers = FileOperator.walkersFromExportFile();
-			
-			for (int i = 0; i < walkers.size(); ++i) {
-				
-				boolean talalt = false;
-				String[] neves = walkers.get(i).split("\\*");
-				String nev = neves[0];
-				String dt = neves[1];
-				
-				for (int j = 0; j < ar.size() && !talalt; ++j) {
-						
-					if (nev.equals(ar.get(j).getName())) {
-						ar.get(j).setDt(dt);
-						
-						//ha a karakternek kell taxi
-						if (ar.get(j).getTaxi().equals("igen")) {
+/*		
 
-							//ha 21:30-as
-							if (dt.equals("21:30")) {
-								model21.addElement(ar.get(j));
-							} else {
-								//ha 22:30-as
-								model22.addElement(ar.get(j));
-							}
-						} else if (ar.get(j).getTaxi().equals("nem")) {
-							//ha nem kell taxi
-							modelNemKell.addElement(ar.get(j));
-						} else {
-							//ha nem lehet tudni
-							modelNemTudom.addElement(ar.get(j));
-						}
-						
-						talalt = true;
-					}
-				}
-				
-			}
-			
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		
-		
+*/		
 		
 		
 		
@@ -437,7 +470,7 @@ class DistanceCalculator extends JFrame
 		jl21but.addActionListener(new ActionListener() {
 
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			synchronized public void actionPerformed(ActionEvent e) {
 				beulTaxikba(model21);
 				
 			}
@@ -454,16 +487,156 @@ class DistanceCalculator extends JFrame
 			@Override
 			synchronized public void actionPerformed(ActionEvent e) {
 				
-					
-						beulTaxikba(model22);
-
-				
+				beulTaxikba(model22);
 			}
 			
 		});
 		
 		
 		
+		
+		
+		
+		jl21but.setEnabled(false);
+		jl22but.setEnabled(false);
+		jlNemKellbut.setEnabled(false);
+		jlNemTudombut.setEnabled(false);
+		jl21NemKell.setEnabled(false);
+		jl22NemKell.setEnabled(false);
+		
+		
+		
+		/**
+		 * export menü listener
+		 */
+		
+		export.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				
+				 JFileChooser fileChooser = new JFileChooser();
+				 String path = "user.home";
+				 
+				  try {
+					path = new File(".").getCanonicalPath() + "/";
+					
+					System.out.println(path);
+					
+					
+				} catch (IOException e2) {
+					// TODO Auto-generated catch block
+					e2.printStackTrace();
+				}
+			        fileChooser.setCurrentDirectory(new File(path));
+			        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			        fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Kollégák névsora", "xlsx"));
+			        fileChooser.setAcceptAllFileFilterUsed(true);
+			        int result = fileChooser.showOpenDialog(tihs);
+			        if (result == JFileChooser.APPROVE_OPTION) {
+			        	
+			        	System.out.println("itt vagyunk");
+			            File selectedFile = fileChooser.getSelectedFile();
+			            System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+			            
+			            FileOperator.setExport(selectedFile.getAbsolutePath());
+			            /**
+			             * feltöltjük elemekkel a táblát
+			             */
+			            
+			    		
+			    			ArrayList<String> walkers;
+							try {
+								walkers = FileOperator.walkersFromExportFile();
+								
+								System.out.println("kacsa");
+								
+								model21.removeAllElements();
+								model22.removeAllElements();
+								modelNemKell.removeAllElements();
+								modelNemTudom.removeAllElements();
+								
+				    			for (int i = 0; i < walkers.size(); ++i) {
+				    				
+				    				boolean talalt = false;
+				    				String[] neves = walkers.get(i).split("\\*");
+				    				String nev = neves[0];
+				    				String dt = neves[1];
+				    				
+				    				for (int j = 0; j < ar.size() && !talalt; ++j) {
+				    						
+				    					if (nev.equals(ar.get(j).getName())) {
+				    						ar.get(j).setDt(dt);
+				    						
+				    						//ha a karakternek kell taxi
+				    						if (ar.get(j).getTaxi().equals("igen")) {
+
+				    							if (ar.get(j).getLat() == 0) {
+				    								
+				    								//message box fog felugrani
+				    								JOptionPane.showMessageDialog(tihs, "Hibás fájl!: " + ar.get(j) + "-nél nincs megfelelő cím beállítva");
+				    								break;
+				    							}
+				    							//ha 21:30-as
+				    							if (dt.equals("21:30")) {
+				    								model21.addElement(ar.get(j));
+				    							} else {
+				    								//ha 22:30-as
+				    								model22.addElement(ar.get(j));
+				    							}
+				    						} else if (ar.get(j).getTaxi().equals("nem")) {
+				    							//ha nem kell taxi
+				    							modelNemKell.addElement(ar.get(j));
+				    						} else {
+				    							//ha nem lehet tudni
+				    							modelNemTudom.addElement(ar.get(j));
+				    						}
+				    						
+				    						talalt = true;
+				    					}
+				    					
+				    					
+				    				}
+				    				
+				    				if (!talalt) {
+	    								JOptionPane.showMessageDialog(tihs, "Hibás fájl!: " + walkers.get(i) + " nem található");
+
+			    					}
+				    				
+				    				
+				    		
+				    				
+				    			}
+				    			
+				    			
+				    			jl21but.setEnabled(true);
+			    				jl22but.setEnabled(true);
+			    				jlNemKellbut.setEnabled(true);
+			    				jlNemTudombut.setEnabled(true);
+			    				jl21NemKell.setEnabled(true);
+			    				jl22NemKell.setEnabled(true);
+			    				
+							} catch (Exception e1) {
+								// TODO Auto-generated catc
+								
+								JOptionPane.showMessageDialog(tihs, "Hibás fájl!");
+								System.out.println(e1);
+								
+								jl21but.setEnabled(false);
+								jl22but.setEnabled(false);
+								jlNemKellbut.setEnabled(false);
+								jlNemTudombut.setEnabled(false);
+								jl21NemKell.setEnabled(false);
+								jl22NemKell.setEnabled(false);
+							}
+							   
+					        
+			        }
+
+			    }
+
+			    });
 		
 		
 		
@@ -591,7 +764,7 @@ class DistanceCalculator extends JFrame
 					for (int k = 1; k < taxik.get(i).getTaxi().size(); ++k) {
 						
 						//ellenőrizzük, hogy ha az i. taxi k. elemét áttennénk a j. taxi utolsó helyére, akkor jobb lenne a költség
-						if (taxik.get(i).fullLengthOfTheRoadMinusK(k, szamitas) + 
+						if (taxik.get(j).notFullWalkers() && taxik.get(i).fullLengthOfTheRoadMinusK(k, szamitas) + 
 								taxik.get(j).fullLengthIfPlus(taxik.get(i).getTaxi().get(k), szamitas) < 
 								
 								taxik.get(i).fullLengthOfTheRoad(szamitas) + taxik.get(j).fullLengthOfTheRoad(szamitas)) {
@@ -600,7 +773,7 @@ class DistanceCalculator extends JFrame
 							taxik.get(i).getTaxi().remove(k);
 							taxik.get(j).addStaff(elem);
 							k = k - 1;
-							System.out.println(taxik.get(i).getTaxi().get(0));
+							//System.out.println(taxik.get(i).getTaxi().get(0));
 							
 							
 						}
@@ -618,8 +791,39 @@ class DistanceCalculator extends JFrame
 		
 		
 		
+		
+		/**
+		 * Új ablak létrehozása
+		 */
+		
+		
+		
+        JFrame frame = new JFrame("Eredmény");
+        frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        panel.setOpaque(true);
+        JTextArea textArea = new JTextArea(15, 50);
+        textArea.setWrapStyleWord(true);
+        textArea.setEditable(false);
+        JScrollPane scroller = new JScrollPane(textArea);
+		panel.add(scroller);
+		
+		frame.pack();
+		frame.setSize(500, 500);
+		frame.setContentPane(panel);
+		
+        frame.setLocationByPlatform(true);
+        frame.setVisible(true);
+        frame.setResizable(false);
+       
+		
+		String eredmeny = "";
 	
 		System.out.println("összesen: " + taxik.size());
+		
+		eredmeny += "összesen: " + taxik.size() + "\n";
 		
 		/*Staff csere = taxik.get(0).getTaxi().get(1);
 		taxik.get(0).getTaxi().set(1, taxik.get(2).getTaxi().get(0));
@@ -628,12 +832,20 @@ class DistanceCalculator extends JFrame
 		for (int i = 0; i < taxik.size(); ++i) {
 			System.out.println(i+ ". taxi: " + taxik.get(i).fullLengthOfTheRoad(szamitas));
 			
+			eredmeny += i+ ". taxi: " + taxik.get(i).fullLengthOfTheRoad(szamitas) + "\n";
+			
 			for (int j = 0; j < taxik.get(i).getTaxi().size(); ++j) {
 				System.out.println(taxik.get(i).getTaxi().get(j));
+				
+				eredmeny += taxik.get(i).getTaxi().get(j) + "\n";
 			}
+			
+			eredmeny += "\n";
 			
 			System.out.println("");
 		}
+		
+		textArea.setText(eredmeny);
 		
 		
 		
@@ -743,6 +955,91 @@ class DistanceCalculator extends JFrame
 	
 	
 	
+	public synchronized void threadsStarting(DefaultListModel<Staff> model) {
+		
+
+		
+		
+		Thread tr = new Thread (new Runnable() {
+
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				
+				/*jl21but.setEnabled(false);
+				jl22but.setEnabled(false);
+				jlNemKellbut.setEnabled(false);
+				jlNemTudombut.setEnabled(false);
+				jl21NemKell.setEnabled(false);
+				jl22NemKell.setEnabled(false);*/
+				
+				beulTaxikba(model);
+				vege = true;
+				
+				
+				/*jl21but.setEnabled(true);
+				jl22but.setEnabled(true);
+				jlNemKellbut.setEnabled(true);
+				jlNemTudombut.setEnabled(true);
+				jl21NemKell.setEnabled(true);
+				jl22NemKell.setEnabled(true);*/
+			}
+			
+		});
+		
+		
+		progressBarThread = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				
+				progressBar.setVisible(true);
+				int value = 1;
+				
+	
+				
+				while (!vege) {
+					
+					if (value > 80) {
+						
+						value = 1;
+						
+					} else 
+					
+					value += 5;
+					
+					progressBar.setValue(value);
+					
+					
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+				}
+				
+	
+				
+				progressBar.setVisible(false);
+			    progressBarThread.interrupt();
+		
+				
+			}
+			
+		});
+		
+		progressBarThread.start();
+		tr.start();
+		
+		
+
+
+
+	}
+	
 	
 	
 	
@@ -753,9 +1050,8 @@ class DistanceCalculator extends JFrame
 			UIManager.setLookAndFeel(new MetalLookAndFeel());
 		} catch (Exception ex) {}
 
-		ArrayList<Staff> ar = FileOperator.WalkersFromExcel();
 		
-		DistanceCalculator cl = new DistanceCalculator(ar);
+		DistanceCalculator cl = new DistanceCalculator();
 		//getDistance(46.759409,23.5441039, 46.7607093,23.6113426);
 		
 		
