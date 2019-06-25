@@ -48,7 +48,7 @@ final public class FileOperator {
 	 * Ez a fájl az a fájl, ahonnan betöltődnek az adatok a címekről
 	 */
 	final static String xmlLoc = "transportation.staff";
-	 static private String  taxi;
+	 static private String  taxi = "taxi.xlsx";
 	 static private String export;
 	
 	

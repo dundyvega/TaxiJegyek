@@ -1,6 +1,7 @@
 package hu.dundyvega.taxiexport.objects;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * 
@@ -101,34 +102,29 @@ public class Taxi {
 	 * @param szamiatas
 	 * @return
 	 */
-	public double fullLengthPlusOptimalization(Staff f, int szamiatas) {
+	public double fullLengthPlusOptimalization(Staff f, int szamitas) {
 		
-		
-		double osszeg = 10000000;
-		optimalis = 0;
-		double szamol = 0;
-		Staff elem;
 	
+		ArrayList<Staff> staffs = new ArrayList<Staff>();
+		
+		//létrehozunk egy másolatot a taxiba ülőkről
 		for (int i = 0; i < walkers.size(); ++i) {
-			
-			elem = walkers.get(i);
-			walkers.set(i, f);
-			
-			//ha találtunk egy kisebbet
-			
-			
-			szamol = fullLengthOfTheRoad(szamiatas);
-			if (szamol < osszeg) {
-				
-				osszeg = szamol;
-				
-				optimalis = i;
-			}
-			
-			walkers.set(i, elem);
-			
-			
+			staffs.add(walkers.get(i));
 		}
+		
+		//hozzáadjuk az f elemet
+		walkers.add(f);
+		
+		//sorrendbe rendezzük origotól való távolságra
+		
+		Collections.sort(walkers);
+		
+		double osszeg = this.fullLengthOfTheRoad(szamitas);
+		
+		//visszaállítjuk a listát
+		
+		walkers = staffs;
+		
 		
 		return osszeg;
 		
@@ -144,26 +140,8 @@ public class Taxi {
 		
 		walkers.add(staff);
 		
-		ArrayList<Staff> staffs = new ArrayList<Staff>();
-		
-		for (int i = 0; i < walkers.size(); ++i) {
-			
-			if (i < optimalis) {
-				
-				staffs.add(walkers.get(i));
-				
-			} else  if (i == optimalis) {
-				
-				staffs.add(staff);
-				
-			} else {
-				
-				staffs.add(walkers.get(i - 1));
-			}
-			
-		}
-		
-		walkers = staffs;
+	
+		Collections.sort(walkers);
 	}
 	
 	

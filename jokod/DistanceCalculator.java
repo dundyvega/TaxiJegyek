@@ -1,6 +1,9 @@
 import java.awt.BorderLayout;
 import java.awt.Cursor;
 import java.awt.GridLayout;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedInputStream;
@@ -51,6 +54,11 @@ import hu.dundyvega.taxiexport.objects.Taxi;
 */
 import javafx.scene.text.Font;
 
+/**
+ * GUI
+ * @author dundyvega
+ *
+ */
 class DistanceCalculator extends JFrame
 {
 	
@@ -71,7 +79,7 @@ class DistanceCalculator extends JFrame
 	private JButton jl21NemKell;
 	private JButton jl22NemKell;
 	private JMenu fajl;
-	private JMenuItem kollegak;
+	//private JMenuItem kollegak;
 	private JMenuItem export;
 	private JLabel statusBar;
 	
@@ -90,6 +98,8 @@ class DistanceCalculator extends JFrame
 	private JMenu hibaHatar;
 	ButtonGroup hibaHatarGroup;
 	JRadioButtonMenuItem nulla;
+	JRadioButtonMenuItem fel;
+	JRadioButtonMenuItem nullaegesznyolc;
 	JRadioButtonMenuItem egy;
 	JRadioButtonMenuItem egyfel;
 	JRadioButtonMenuItem ketto;
@@ -181,21 +191,21 @@ class DistanceCalculator extends JFrame
 		
 		mb = new JMenuBar();
 		
-		kollegak = new JMenuItem("Kollégák");
+		//kollegak = new JMenuItem("Kollégák");
 		export = new JMenuItem ("Export");
-		export.setEnabled(false);
+		//export.setEnabled(false);
 		
 		tihs = this;
 		
 		
 		
 		fajl = new JMenu("Fájl");
-		fajl.add(kollegak);
+		//fajl.add(kollegak);
 		
 		/**
 		 * A kollégákat betöltő listener, az export kicsit távolabb lesz
 		 */
-		kollegak.addActionListener(new ActionListener() {
+		/*kollegak.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -251,7 +261,15 @@ class DistanceCalculator extends JFrame
 				
 			}
 			
-		});
+		});*/
+		
+		try {
+			ar = FileOperator.WalkersFromExcel();
+		} catch (IOException e3) {
+			// TODO Auto-generated catch block
+			JOptionPane.showMessageDialog(tihs, "Nem található a taxi.xlsx fájl");
+			System.exit(0);
+		}
 		
 		fajl.add(export);
 		
@@ -284,12 +302,16 @@ class DistanceCalculator extends JFrame
 		
 		hibaHatarGroup = new ButtonGroup();
 		nulla = new JRadioButtonMenuItem("0 km");
+		fel = new JRadioButtonMenuItem("0,5 km");
+		nullaegesznyolc = new JRadioButtonMenuItem("0,8 km");
 		egy = new JRadioButtonMenuItem("1 km");
 		egyfel = new JRadioButtonMenuItem("1,5 km");
 		ketto = new JRadioButtonMenuItem("2 km");
 		harom = new JRadioButtonMenuItem("3 km");
 		
 		hibaHatarGroup.add(nulla);
+		hibaHatarGroup.add(fel);
+		hibaHatarGroup.add(nullaegesznyolc);
 		hibaHatarGroup.add(egy);
 		hibaHatarGroup.add(egyfel);
 		hibaHatarGroup.add(ketto);
@@ -299,6 +321,8 @@ class DistanceCalculator extends JFrame
 		
 		
 		hibaHatar.add(nulla);
+		hibaHatar.add(fel);
+		hibaHatar.add(nullaegesznyolc);
 		hibaHatar.add(egy);
 		hibaHatar.add(egyfel);
 		hibaHatar.add(ketto);
@@ -471,7 +495,7 @@ class DistanceCalculator extends JFrame
 
 			@Override
 			synchronized public void actionPerformed(ActionEvent e) {
-				beulTaxikba(model21);
+				beulTaxikba(model21, "taxi 21:30-tól:");
 				
 			}
 			
@@ -487,7 +511,7 @@ class DistanceCalculator extends JFrame
 			@Override
 			synchronized public void actionPerformed(ActionEvent e) {
 				
-				beulTaxikba(model22);
+				beulTaxikba(model22, "taxi 22:00-tól:");
 			}
 			
 		});
@@ -545,6 +569,11 @@ class DistanceCalculator extends JFrame
 			             * feltöltjük elemekkel a táblát
 			             */
 			            
+						model21.removeAllElements();
+						model22.removeAllElements();
+						modelNemKell.removeAllElements();
+						modelNemTudom.removeAllElements();
+			            
 			    		
 			    			ArrayList<String> walkers;
 							try {
@@ -552,10 +581,7 @@ class DistanceCalculator extends JFrame
 								
 								System.out.println("kacsa");
 								
-								model21.removeAllElements();
-								model22.removeAllElements();
-								modelNemKell.removeAllElements();
-								modelNemTudom.removeAllElements();
+
 								
 				    			for (int i = 0; i < walkers.size(); ++i) {
 				    				
@@ -646,7 +672,7 @@ class DistanceCalculator extends JFrame
 		
 	}
 	
-	public synchronized void beulTaxikba(DefaultListModel<Staff> model) {
+	public synchronized void beulTaxikba(DefaultListModel<Staff> model, String idopont) {
 		
 		Staff origo = new Staff(-1, "UPC János", "str. Brancusi 147", 46.760893, 23.613569, "nem");
 		
@@ -669,8 +695,12 @@ class DistanceCalculator extends JFrame
 		} else if (ketto.isSelected()) {
 			hibahatar = 2;
 			
-		} else {
+		} else if (harom.isSelected()){
 			hibahatar = 3;
+		} else if (fel.isSelected()) {
+			hibahatar = 0.5;
+		} else if (nullaegesznyolc.isSelected()) {
+			hibahatar = 0.8;
 		}
 		
 		
@@ -765,13 +795,13 @@ class DistanceCalculator extends JFrame
 						
 						//ellenőrizzük, hogy ha az i. taxi k. elemét áttennénk a j. taxi utolsó helyére, akkor jobb lenne a költség
 						if (taxik.get(j).notFullWalkers() && taxik.get(i).fullLengthOfTheRoadMinusK(k, szamitas) + 
-								taxik.get(j).fullLengthIfPlus(taxik.get(i).getTaxi().get(k), szamitas) < 
+								taxik.get(j).fullLengthPlusOptimalization(taxik.get(i).getTaxi().get(k), szamitas) < 
 								
-								taxik.get(i).fullLengthOfTheRoad(szamitas) + taxik.get(j).fullLengthOfTheRoad(szamitas)) {
+								taxik.get(i).fullLengthOfTheRoad(szamitas) + taxik.get(j).fullLengthOfTheRoad(szamitas)){
 							
 							Staff elem = taxik.get(i).getTaxi().get(k);
-							taxik.get(i).getTaxi().remove(k);
-							taxik.get(j).addStaff(elem);
+							taxik.get(i).getTaxi().remove(elem);
+							taxik.get(j).addStaffOptimalization(elem);
 							k = k - 1;
 							//System.out.println(taxik.get(i).getTaxi().get(0));
 							
@@ -823,16 +853,16 @@ class DistanceCalculator extends JFrame
 	
 		System.out.println("összesen: " + taxik.size());
 		
-		eredmeny += "összesen: " + taxik.size() + "\n";
+		eredmeny += "Összese: " + taxik.size() + " " + idopont+ "\n\n";
 		
 		/*Staff csere = taxik.get(0).getTaxi().get(1);
 		taxik.get(0).getTaxi().set(1, taxik.get(2).getTaxi().get(0));
 		taxik.get(2).getTaxi().set(0, csere);
 		*/
 		for (int i = 0; i < taxik.size(); ++i) {
-			System.out.println(i+ ". taxi: " + taxik.get(i).fullLengthOfTheRoad(szamitas));
+			System.out.println((i + 1)+ ". taxi: ");
 			
-			eredmeny += i+ ". taxi: " + taxik.get(i).fullLengthOfTheRoad(szamitas) + "\n";
+			eredmeny += (i+1)+ ". taxi: " + "\n";
 			
 			for (int j = 0; j < taxik.get(i).getTaxi().size(); ++j) {
 				System.out.println(taxik.get(i).getTaxi().get(j));
@@ -847,6 +877,9 @@ class DistanceCalculator extends JFrame
 		
 		textArea.setText(eredmeny);
 		
+		StringSelection tx = new StringSelection(eredmeny);
+		Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+		clipboard.setContents(tx, null);
 		
 		
 		//System.out.println(taxik.get(29).getTaxi().get(2).getTaxi());
@@ -973,7 +1006,7 @@ class DistanceCalculator extends JFrame
 				jl21NemKell.setEnabled(false);
 				jl22NemKell.setEnabled(false);*/
 				
-				beulTaxikba(model);
+				beulTaxikba(model, "null pointer exception");
 				vege = true;
 				
 				
