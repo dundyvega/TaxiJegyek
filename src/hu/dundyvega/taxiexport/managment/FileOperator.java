@@ -9,7 +9,6 @@ package hu.dundyvega.taxiexport.managment;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -24,23 +23,16 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import hu.dundyvega.taxiexport.objects.Staff;
-import hu.dundyvega.taxiexport.objects.Taxi;
-
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.sl.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 final public class FileOperator {
 
@@ -48,8 +40,8 @@ final public class FileOperator {
 	 * Ez a fájl az a fájl, ahonnan betöltődnek az adatok a címekről
 	 */
 	final static String xmlLoc = "transportation.staff";
-	final static String  taxi = "taxi.xlsx";
-	final static String export = "export.xlsx";
+	 static private String  taxi = "taxi.xlsx";
+	 static private String export;
 	
 	
 	
@@ -205,8 +197,6 @@ final public class FileOperator {
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			
 			Document doc = dBuilder.parse(fXmlFile);
-			Element rootElement = doc.getDocumentElement();
-			
 			NodeList nlist = doc.getElementsByTagName("Staff");
 			
 			for (int i = 0; i < nlist.getLength(); ++i) {
@@ -361,6 +351,7 @@ final public class FileOperator {
 		ArrayList<Staff> walkers = new ArrayList<Staff>();
 		
 		FileInputStream excelFile = new FileInputStream(taxi);
+		@SuppressWarnings("resource")
 		XSSFWorkbook workbook = new XSSFWorkbook(excelFile);
 		XSSFSheet datatypeSheet = workbook.getSheetAt(0);
 		
@@ -420,9 +411,11 @@ final public class FileOperator {
 	 * @throws IOException 
 	 */
 
-	public static ArrayList<String> walkersFromExportFile() throws IOException {
+	@SuppressWarnings({ "deprecation", "static-access" })
+	public static ArrayList<String> walkersFromExportFile() throws IOException, NullPointerException {
 		
 		FileInputStream excelFile = new FileInputStream(export);
+		@SuppressWarnings("resource")
 		XSSFWorkbook workbook = new XSSFWorkbook(excelFile);
 		XSSFSheet datatypeSheet = workbook.getSheetAt(0);
 		
@@ -453,14 +446,24 @@ final public class FileOperator {
 				cellIterator.next();
 				
 				Cell datumC = cellIterator.next();
-				String datum = datumC.getDateCellValue().getHours() + ":" + datumC.getDateCellValue().getMinutes();
+				String datum;
+				 
+				if (datumC.getCellType() == datumC.getCellTypeEnum().NUMERIC) {
+				
+				datum = datumC.getDateCellValue().getHours() + ":" + datumC.getDateCellValue().getMinutes();
 				
 				if (datum.equals("22:0") ||  datum.equals("21:30")) {
 				
 					walkers.add(name + "*" + datum);
 					
-					System.out.println(name + "*" + datum);
+					//System.out.println(name + "*" + datum);
 				
+				}
+				
+				} else {
+					
+					throw new NullPointerException("Rossz beviteli fálj vagy rossz adatok");
+					
 				}
 				
 				break;
@@ -471,6 +474,29 @@ final public class FileOperator {
 		
 		
 		return walkers;
+		
+	}
+
+
+
+	/**
+	 * Beállítja az névsor helyét
+	 * @param absolutePath
+	 */
+	public static void setTaxi(String absolutePath) {
+		// TODO Auto-generated method stub
+		taxi = absolutePath;
+		
+	}
+
+
+
+/**
+ * Beéllítja az export fálj helyét
+ * @param absolutePath
+ */
+	public static void setExport(String absolutePath) {
+		export = absolutePath;
 		
 	}
 }
