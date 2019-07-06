@@ -452,7 +452,12 @@ final public class FileOperator {
 				
 				datum = datumC.getDateCellValue().getHours() + ":" + datumC.getDateCellValue().getMinutes();
 				
-				if (datum.equals("22:0") ||  datum.equals("21:30")) {
+				Cell szovegC = cellIterator.next();
+				String szoveg = szovegC.getStringCellValue();
+				
+				System.out.println("szoveg: " + szoveg);
+				
+				if ((datum.equals("22:0") ||  datum.equals("21:30")) && !szoveg.equals("Szabadság") && !szoveg.equals("Betegség")) {
 				
 					walkers.add(name + "*" + datum);
 					

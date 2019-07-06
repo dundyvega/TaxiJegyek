@@ -170,7 +170,7 @@ class DistanceCalculator extends JFrame
 		mb = new JMenuBar();
 		
 		//kollegak = new JMenuItem("Kollégák");
-		export = new JMenuItem ("Export");
+		export = new JMenuItem ("Beo Import");
 		//export.setEnabled(false);
 		
 		tihs = this;
